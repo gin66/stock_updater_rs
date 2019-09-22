@@ -4,7 +4,6 @@ use std::io::Read;
 
 use error_chain::*;
 use chrono::NaiveDate;
-use curl::easy::Easy;
 use scraper::{Html, Selector};
 
 mod ohlc;
@@ -22,27 +21,8 @@ error_chain! {
 fn run() -> Result<()>  {
     println!("Hello, world!");
 
-    let body = reqwest::get("https://www.onvista.de/aktien/kurshistorie.html?ISIN=US2605661048&RANGE=120M")?.text()?;
-    println!("{}",body);
-    return Ok(());
-
-    // Write the contents of rust-lang.org to stdout
-        let (tx,rx) = std::sync::mpsc::channel();
-    if true {
-
-        let mut easy = Easy::new();
-        easy.url("https://www.onvista.de/aktien/kurshistorie.html?ISIN=US2605661048&RANGE=120M").unwrap();
-        easy.write_function(move |part| {let pl = part.len();tx.send(part.to_vec()).unwrap();Ok(pl)})
-            .unwrap();
-        easy.perform().unwrap();
-    }
-
-    let mut data = String::new();
-    for chunk in rx {
-        let chunk_str = String::from_utf8(chunk).unwrap();
-        //println!("{:?}",chunk_str);
-        data.push_str(&chunk_str);
-    }
+    let data = reqwest::get("https://www.onvista.de/aktien/kurshistorie.html?ISIN=US2605661048&RANGE=120M")?.text()?;
+    println!("{}",data);
 
     if false {
         let file = File::open("../dow").unwrap();

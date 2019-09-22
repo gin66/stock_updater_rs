@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 error-chain = "0.12"
-curl = "0.4"
 reqwest = "0.9"
 scraper = "0.10"
 chrono = "0.4"
