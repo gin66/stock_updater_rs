@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::Write;
 use std::collections::HashMap;
+use std::path::Path;
 
 use log::*;
 use error_chain::*;
@@ -47,11 +48,7 @@ fn load_file(f: File) -> Result<Vec<(NaiveDate, OHLC)>> {
     Ok(ohlc_data)
 }
 
-fn run() -> Result<()>  {
-    println!("Hello, world!");
-
-    let isin = "US2605661048";
-
+fn update_isin(isin: String) -> Result<()>  {
     let fname = format!("stock/{}/ohlc.csv",isin);
     let known_ohlc = match File::open(&fname) {
         Ok(f) => load_file(f).expect(&format!("Read error on {}",fname)),
@@ -64,7 +61,7 @@ fn run() -> Result<()>  {
             let days = NaiveDate::signed_duration_since(today,*d).num_days();
             assert!(days >= 0);
             println!("{}",days);
-            let months = (days+29) / 30;
+            let months = days / 30 + 1;
             let months = months.min(120);
             format!("{}M",months)
         },
@@ -133,6 +130,20 @@ fn run() -> Result<()>  {
     Ok(())
 }
 
+
+fn run() -> Result<()>  {
+    println!("Hello, world!");
+
+    let path = Path::new("stock/");
+    for entry in path.read_dir().expect("read_dir call failed") {
+        if let Ok(entry) = entry {
+            println!("{:?}", entry.file_name());
+            let isin = entry.file_name().into_string().unwrap();
+            update_isin(isin)?;
+        }
+    }
+    Ok(())
+}
 fn main() {
     simple_logger::init_with_level(log::Level::Warn).unwrap();
 
