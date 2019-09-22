@@ -2,12 +2,30 @@ use std::fs::File;
 use std::io::BufReader;
 use std::io::Read;
 
+use error_chain::*;
 use chrono::NaiveDate;
 use curl::easy::Easy;
 use scraper::{Html, Selector};
 
-fn main() {
+mod ohlc;
+
+error_chain! {
+    foreign_links {
+        Io(std::io::Error);
+        Reqwest(reqwest::Error);
+    }
+
+    errors { RandomResponseError(t: String) }
+}
+
+
+fn run() -> Result<()>  {
     println!("Hello, world!");
+
+    let body = reqwest::get("https://www.onvista.de/aktien/kurshistorie.html?ISIN=US2605661048&RANGE=120M")?.text()?;
+    println!("{}",body);
+    return Ok(());
+
     // Write the contents of rust-lang.org to stdout
         let (tx,rx) = std::sync::mpsc::channel();
     if true {
@@ -71,8 +89,20 @@ fn main() {
                     .parse()
                     .unwrap();
 
-                println!("{} {} {} {} {}", day, open, low, high, close);
+                let d_ohlc = ohlc::OHLC { open, high, low, close };
+                println!("{} {}", day, d_ohlc);
             }
+        }
+    }
+    Ok(())
+}
+
+fn main() {
+    if let Err(error) = run() {
+        match *error.kind() {
+            ErrorKind::Io(_) => println!("Standard IO error: {:?}", error),
+            ErrorKind::Reqwest(_) => println!("Reqwest error: {:?}", error),
+            _ => println!("Other error: {:?}", error),
         }
     }
 }
