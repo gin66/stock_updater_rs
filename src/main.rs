@@ -14,6 +14,9 @@ use ohlc::OHLC;
 
 error_chain! {
     foreign_links {
+        ParseFloat(std::num::ParseFloatError);
+        ParseDate(chrono::format::ParseError);
+        Ohlc(ohlc::Error);
         Io(std::io::Error);
         Reqwest(reqwest::Error);
     }
@@ -24,7 +27,7 @@ error_chain! {
 fn update_isin(isin: String) -> Result<()> {
     let fname = format!("stock/{}/ohlc.csv", isin);
     let known_ohlc = match File::open(&fname) {
-        Ok(f) => OHLC::load_file(f).expect(&format!("Read error on {}", fname)),
+        Ok(f) => OHLC::load_file(f)?,
         _ => vec![],
     };
 
@@ -56,35 +59,31 @@ fn update_isin(isin: String) -> Result<()> {
     for line in doc.select(&selector) {
         if line.value().classes().count() == 1 {
             let mut fields = line.text();
-            let day = NaiveDate::parse_from_str(fields.next().unwrap(), "%d.%m.%y").unwrap();
+            let day = NaiveDate::parse_from_str(fields.next().unwrap(), "%d.%m.%y")?;
             let open: f32 = fields
                 .next()
                 .unwrap()
                 .replace(".", "")
                 .replace(',', ".")
-                .parse()
-                .unwrap();
+                .parse()?;
             let low: f32 = fields
                 .next()
                 .unwrap()
                 .replace(".", "")
                 .replace(',', ".")
-                .parse()
-                .unwrap();
+                .parse()?;
             let high: f32 = fields
                 .next()
                 .unwrap()
                 .replace(".", "")
                 .replace(',', ".")
-                .parse()
-                .unwrap();
+                .parse()?;
             let close: f32 = fields
                 .next()
                 .unwrap()
                 .replace(".", "")
                 .replace(',', ".")
-                .parse()
-                .unwrap();
+                .parse()?;
 
             let d_ohlc = OHLC {
                 open,
