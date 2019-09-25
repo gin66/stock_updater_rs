@@ -3,7 +3,7 @@ use std::io::Write;
 use std::collections::HashMap;
 use std::path::Path;
 
-use log::*;
+//use log::*;
 use error_chain::*;
 use chrono::NaiveDate;
 use scraper::{Html, Selector};
@@ -22,36 +22,10 @@ error_chain! {
 }
 
 
-fn load_file(f: File) -> Result<Vec<(NaiveDate, OHLC)>> {
-    let mut rdr = csv::ReaderBuilder::new().delimiter(b' ').from_reader(f);
-
-    let mut ohlc_data = vec![];
-    for result in rdr.records() {
-        if let Ok(record) = result {
-            let day = NaiveDate::parse_from_str(&record[0], "%Y-%m-%d").unwrap();
-            let open: f32 = record[1].parse().unwrap();
-            let high: f32 = record[2].parse().unwrap();
-            let low: f32 = record[3].parse().unwrap();
-            let close: f32 = record[4].parse().unwrap();
-            let ohlc = OHLC {
-                open,
-                high,
-                low,
-                close,
-            };
-            ohlc_data.push((day, ohlc));
-        }
-        else {
-            warn!("Parse error: {:?}",result);
-        }
-    }
-    Ok(ohlc_data)
-}
-
 fn update_isin(isin: String) -> Result<()>  {
     let fname = format!("stock/{}/ohlc.csv",isin);
     let known_ohlc = match File::open(&fname) {
-        Ok(f) => load_file(f).expect(&format!("Read error on {}",fname)),
+        Ok(f) => OHLC::load_file(f).expect(&format!("Read error on {}",fname)),
         _ => vec![]
     };
 
