@@ -5,24 +5,22 @@ use std::path::Path;
 
 //use log::*;
 use chrono::NaiveDate;
-use error_chain::*;
 use scraper::{Html, Selector};
 
-mod ohlc;
+use updater::OHLC;
+use updater::error_def::*;
 
-use ohlc::OHLC;
-
-error_chain! {
-    foreign_links {
-        ParseFloat(std::num::ParseFloatError);
-        ParseDate(chrono::format::ParseError);
-        Ohlc(ohlc::Error);
-        Io(std::io::Error);
-        Reqwest(reqwest::Error);
-    }
-
-    errors { RandomResponseError(t: String) }
-}
+//error_chain! {
+//    foreign_links {
+//        ParseFloat(std::num::ParseFloatError);
+//        ParseDate(chrono::format::ParseError);
+//        Ohlc(ohlc::Error);
+//        Io(std::io::Error);
+//        Reqwest(reqwest::Error);
+//    }
+//
+//    errors { RandomResponseError(t: String) }
+//}
 
 fn update_isin(isin: String) -> Result<()> {
     let fname = format!("stock/{}/ohlc.csv", isin);

@@ -3,13 +3,7 @@ use std::fs::File;
 
 use chrono::NaiveDate;
 use error_chain::*;
-
-error_chain! {
-    foreign_links {
-        ParseFloat(std::num::ParseFloatError);
-        ParseDate(chrono::format::ParseError);
-    }
-}
+use crate::error_def::*;
 
 pub struct OHLC {
     pub open: f32,
