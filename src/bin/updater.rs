@@ -7,20 +7,8 @@ use std::path::Path;
 use chrono::NaiveDate;
 use scraper::{Html, Selector};
 
-use updater::OHLC;
 use updater::error_def::*;
-
-//error_chain! {
-//    foreign_links {
-//        ParseFloat(std::num::ParseFloatError);
-//        ParseDate(chrono::format::ParseError);
-//        Ohlc(ohlc::Error);
-//        Io(std::io::Error);
-//        Reqwest(reqwest::Error);
-//    }
-//
-//    errors { RandomResponseError(t: String) }
-//}
+use updater::OHLC;
 
 fn update_isin(isin: String) -> Result<()> {
     let fname = format!("stock/{}/ohlc.csv", isin);

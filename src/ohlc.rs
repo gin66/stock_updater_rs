@@ -1,9 +1,9 @@
 use std::fmt;
 use std::fs::File;
 
-use chrono::NaiveDate;
-use error_chain::*;
 use crate::error_def::*;
+use chrono::NaiveDate;
+use error_chain::bail;
 
 pub struct OHLC {
     pub open: f32,
