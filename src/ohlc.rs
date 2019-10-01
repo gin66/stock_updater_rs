@@ -32,7 +32,10 @@ impl fmt::Debug for OHLC {
 
 impl OHLC {
     pub fn load_file(f: File) -> Result<Vec<(NaiveDate, OHLC)>> {
-        let mut rdr = csv::ReaderBuilder::new().delimiter(b' ').from_reader(f);
+        let mut rdr = csv::ReaderBuilder::new()
+            .delimiter(b' ')
+            .has_headers(false)
+            .from_reader(f);
 
         let mut ohlc_data = vec![];
         for result in rdr.records() {
