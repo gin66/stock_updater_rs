@@ -104,9 +104,11 @@ fn run() -> Result<()> {
     let path = Path::new("stock/");
     for entry in path.read_dir().expect("read_dir call failed") {
         if let Ok(entry) = entry {
-            println!("{:?}", entry.file_name());
             let isin = entry.file_name().into_string().unwrap();
-            update_isin(isin)?;
+            if entry.metadata().unwrap().is_dir() && isin.len() == 12 {
+                println!("{:?}", isin);
+                update_isin(isin)?;
+            }
         }
     }
     Ok(())

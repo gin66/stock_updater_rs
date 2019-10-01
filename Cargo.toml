@@ -15,3 +15,4 @@ reqwest = "0.9"
 scraper = "0.10"
 csv = "1.1"
 svg = "0.6"
+conrod = { version ="0.61", features = ["winit", "glium"]}
