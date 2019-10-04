@@ -87,8 +87,8 @@ fn main() -> Result<(), std::io::Error> {
         let from_y = dx.first().unwrap().1.ohlc.low;
         let to_y = dx.last().unwrap().1.ohlc.high;
         let mut chart = ChartBuilder::on(&root)
-            .x_label_area_size(40)
-            .y_label_area_size(40)
+            .x_label_area_size(60)
+            .y_label_area_size(60)
             .caption("DAX", ("Arial", 50.0).into_font())
             .build_ranged(from_date..to_date, from_y..to_y)
             .unwrap();
