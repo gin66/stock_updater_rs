@@ -11,6 +11,7 @@ use ndarray::Array2;
 use plotters::prelude::*;
 
 use updater::ohlc::OHLC;
+use updater::error_def::*;
 
 struct OHLCX {
     ohlc: OHLC,
@@ -44,9 +45,9 @@ fn as_f64_vec(day: &NaiveDate) -> Vec<f64> {
     }
 }
 
-fn load_file(fname: &std::ffi::OsString) -> Result<Vec<(NaiveDate, OHLCX)>, std::io::Error> {
+fn load_file(fname: &std::ffi::OsString) -> Result<Vec<(NaiveDate, OHLCX)>> {
     let f = File::open(fname)?;
-    let ohlc_data = OHLC::load_file(f).unwrap();
+    let ohlc_data = OHLC::load_file(f)?;
 
     let mut opt_last_close = None;
     let mut ohlc_x_data = vec![];
@@ -63,7 +64,7 @@ fn load_file(fname: &std::ffi::OsString) -> Result<Vec<(NaiveDate, OHLCX)>, std:
     Ok(ohlc_x_data)
 }
 
-fn main() -> Result<(), std::io::Error> {
+fn main() -> Result<()> {
     simple_logger::init().unwrap();
 
     let home_path = dirs::home_dir().unwrap();
@@ -73,7 +74,7 @@ fn main() -> Result<(), std::io::Error> {
     fname.push("stock");
     fname.push("DE0008469008");
     fname.push("ohlc.csv");
-    let dax = load_file(&fname.into_os_string()).unwrap();
+    let dax = load_file(&fname.into_os_string())?;
 
     let dx = dax
         .iter()
@@ -81,8 +82,7 @@ fn main() -> Result<(), std::io::Error> {
         .collect::<Vec<_>>();
     {
         //let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
-        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000)
-            .unwrap()
+        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000)?
             .into_drawing_area(); // 1000*1ms
         let mut remain = dx.clone();
         while remain.len() > 100 {
@@ -131,7 +131,7 @@ fn main() -> Result<(), std::io::Error> {
     fname.push("stock");
     fname.push("US2605661048");
     fname.push("ohlc.csv");
-    let dow = load_file(&fname.into_os_string()).unwrap();
+    let dow = load_file(&fname.into_os_string())?;
 
     println!("dax=#{} dow=#{}", dax.len(), dow.len());
 
