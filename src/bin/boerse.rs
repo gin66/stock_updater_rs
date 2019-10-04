@@ -3,9 +3,12 @@ use std::fs::File;
 use std::fmt;
 
 //use log::*;
+use chrono::offset::{Local, TimeZone};
+use chrono::Date;
 use chrono::{Datelike, NaiveDate};
 use ndarray::s;
 use ndarray::Array2;
+use plotters::prelude::*;
 
 use updater::ohlc::OHLC;
 
@@ -73,6 +76,31 @@ fn main() -> Result<(), std::io::Error> {
     fname.push("DE0008469008");
     fname.push("ohlc.csv");
     let dax = load_file(&fname.into_os_string()).unwrap();
+
+    let dx = dax.iter()
+                .map(|(d,e)| (chrono::Local.from_utc_date(&d) as Date<Local>,e))
+                .collect::<Vec<_>>();
+    { 
+    let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+    let from_date = dx.first().unwrap().0;
+    let to_date = dx.last().unwrap().0;
+    let from_y = dx.first().unwrap().1.ohlc.low;
+    let to_y = dx.last().unwrap().1.ohlc.high;
+    let mut chart = ChartBuilder::on(&root)
+        .x_label_area_size(40)
+        .y_label_area_size(40)
+        .caption("DAX", ("Arial", 50.0).into_font())
+        .build_ranged(from_date..to_date, from_y..to_y).unwrap();
+
+    chart.configure_mesh().line_style_2(&WHITE).draw().unwrap();
+
+    chart.draw_series(
+        dx.into_iter()
+            .map(|(d,x)| CandleStick::new(d, x.ohlc.open, x.ohlc.high, x.ohlc.low, x.ohlc.close,
+                                          &GREEN, &RED, 15)),
+    ).unwrap();
+    }
 
     let mut fname = home_path.clone();
     fname.push("data");

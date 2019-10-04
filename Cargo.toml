@@ -12,6 +12,7 @@ rusticsom = { git = "https://github.com/avinashshenoy97/RusticSOM.git", version 
 log = "0.4"
 simple_logger = "1.0"
 chrono = "0.4"
+chrono-tz = "0.5"
 error-chain = "0.12"
 reqwest = "0.9"
 scraper = "0.10"
