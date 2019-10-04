@@ -93,7 +93,12 @@ fn main() -> Result<(), std::io::Error> {
             .build_ranged(from_date..to_date, from_y..to_y)
             .unwrap();
 
-        chart.configure_mesh().line_style_2(&WHITE).draw().unwrap();
+        chart
+            .configure_mesh()
+            .line_style_2(&WHITE)
+            .x_label_formatter(&|d| d.format("%Y-%m-%d").to_string())
+            .draw()
+            .unwrap();
 
         chart
             .draw_series(dx.into_iter().map(|(d, x)| {
