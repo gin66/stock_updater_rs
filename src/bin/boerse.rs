@@ -81,7 +81,9 @@ fn main() -> Result<(), std::io::Error> {
         .collect::<Vec<_>>();
     {
         //let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
-        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000).unwrap().into_drawing_area(); // 1000*1ms
+        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000)
+            .unwrap()
+            .into_drawing_area(); // 1000*1ms
         let mut remain = dx.clone();
         while remain.len() > 100 {
             let mut part = remain;
@@ -89,11 +91,9 @@ fn main() -> Result<(), std::io::Error> {
             root.fill(&WHITE).unwrap();
             let from_date = part.first().unwrap().0;
             let to_date = part.last().unwrap().0;
-            let from_y = part.iter().map(|e| e.1.ohlc.low)
-                    .fold(1./0., f32::min);
-            let to_y = part.iter().map(|e| e.1.ohlc.high)
-                    .fold(0./0., f32::max);
-            println!("{}",from_date);
+            let from_y = part.iter().map(|e| e.1.ohlc.low).fold(1. / 0., f32::min);
+            let to_y = part.iter().map(|e| e.1.ohlc.high).fold(0. / 0., f32::max);
+            println!("{}", from_date);
             let mut chart = ChartBuilder::on(&root)
                 .x_label_area_size(60)
                 .y_label_area_size(60)
