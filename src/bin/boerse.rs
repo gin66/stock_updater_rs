@@ -80,40 +80,50 @@ fn main() -> Result<(), std::io::Error> {
         .map(|(d, e)| (chrono::Local.from_utc_date(&d) as Date<Local>, e))
         .collect::<Vec<_>>();
     {
-        let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
-        root.fill(&WHITE).unwrap();
-        let from_date = dx.first().unwrap().0;
-        let to_date = dx.last().unwrap().0;
-        let from_y = dx.first().unwrap().1.ohlc.low;
-        let to_y = dx.last().unwrap().1.ohlc.high;
-        let mut chart = ChartBuilder::on(&root)
-            .x_label_area_size(60)
-            .y_label_area_size(60)
-            .caption("DAX", ("Arial", 50.0).into_font())
-            .build_ranged(from_date..to_date, from_y..to_y)
-            .unwrap();
+        //let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
+        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000).unwrap().into_drawing_area(); // 1000*1ms
+        let mut remain = dx.clone();
+        while remain.len() > 100 {
+            let mut part = remain;
+            remain = part.split_off(100);
+            root.fill(&WHITE).unwrap();
+            let from_date = part.first().unwrap().0;
+            let to_date = part.last().unwrap().0;
+            let from_y = part.iter().map(|e| e.1.ohlc.low)
+                    .fold(1./0., f32::min);
+            let to_y = part.iter().map(|e| e.1.ohlc.high)
+                    .fold(0./0., f32::max);
+            println!("{}",from_date);
+            let mut chart = ChartBuilder::on(&root)
+                .x_label_area_size(60)
+                .y_label_area_size(60)
+                .caption("DAX", ("Arial", 50.0).into_font())
+                .build_ranged(from_date..to_date, from_y..to_y)
+                .unwrap();
 
-        chart
-            .configure_mesh()
-            .line_style_2(&WHITE)
-            .x_label_formatter(&|d| d.format("%Y-%m-%d").to_string())
-            .draw()
-            .unwrap();
+            chart
+                .configure_mesh()
+                .line_style_2(&WHITE)
+                .x_label_formatter(&|d| d.format("%Y-%m-%d").to_string())
+                .draw()
+                .unwrap();
 
-        chart
-            .draw_series(dx.into_iter().map(|(d, x)| {
-                CandleStick::new(
-                    d,
-                    x.ohlc.open,
-                    x.ohlc.high,
-                    x.ohlc.low,
-                    x.ohlc.close,
-                    &GREEN,
-                    &RED,
-                    15,
-                )
-            }))
-            .unwrap();
+            chart
+                .draw_series(part.into_iter().map(|(d, x)| {
+                    CandleStick::new(
+                        d,
+                        x.ohlc.open,
+                        x.ohlc.high,
+                        x.ohlc.low,
+                        x.ohlc.close,
+                        &GREEN,
+                        &RED,
+                        15,
+                    )
+                }))
+                .unwrap();
+            root.present().unwrap();
+        }
     }
 
     let mut fname = home_path.clone();
