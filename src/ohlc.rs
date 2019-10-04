@@ -5,6 +5,7 @@ use crate::error_def::*;
 use chrono::NaiveDate;
 use error_chain::bail;
 
+#[derive(Clone)]
 pub struct OHLC {
     pub open: f32,
     pub high: f32,

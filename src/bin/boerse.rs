@@ -2,33 +2,35 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::fmt;
 
-use log::*;
+//use log::*;
 use chrono::{Datelike, NaiveDate};
 use ndarray::s;
 use ndarray::Array2;
 
-struct OHLC {
-    open: f64,
-    high: f64,
-    low: f64,
-    close: f64,
-    last_close: f64,
+use updater::ohlc::OHLC;
+
+struct OHLCX {
+    ohlc: OHLC,
+    last_close: f32,
 }
-impl OHLC {
+impl OHLCX {
     fn as_f64_vec(&self) -> Vec<f64> {
         let lc = self.last_close;
-        vec![   (self.open / lc - 1.0) * 20.0,
-                (self.high / lc - 1.0) * 20.0,
-                (self.low / lc - 1.0) * 20.0,
-                (self.close / lc - 1.0) * 20.0]
+        vec![   ((self.ohlc.open / lc - 1.0) * 20.0) as f64,
+                ((self.ohlc.high / lc - 1.0) * 20.0) as f64,
+                ((self.ohlc.low / lc - 1.0) * 20.0) as f64,
+                ((self.ohlc.close / lc - 1.0) * 20.0) as f64]
     }
 }
-impl fmt::Debug for OHLC {
+impl fmt::Debug for OHLCX {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "OHLC({}, {}, {}, {})", self.open, self.high, self.low, self.close)
+        write!(
+            f,
+            "OHLCX({}, last={})",
+            self.ohlc, self.last_close
+        )
     }
 }
-
 fn as_f64_vec(day: &NaiveDate) -> Vec<f64> {
     match day.weekday() {
         chrono::Weekday::Mon => vec![1.0, 0.0, 0.0, 0.0, 0.0],
@@ -41,37 +43,23 @@ fn as_f64_vec(day: &NaiveDate) -> Vec<f64> {
     }
 }
 
-fn load_file(fname: &std::ffi::OsString) -> Result<Vec<(NaiveDate, OHLC)>, std::io::Error> {
+fn load_file(fname: &std::ffi::OsString) -> Result<Vec<(NaiveDate, OHLCX)>, std::io::Error> {
     let f = File::open(fname)?;
-    let mut rdr = csv::ReaderBuilder::new().delimiter(b' ').from_reader(f);
+    let ohlc_data = OHLC::load_file(f).unwrap();
 
-    let mut ohlc_data = vec![];
     let mut opt_last_close = None;
-    for result in rdr.records() {
-        if let Ok(record) = result {
-            let day = NaiveDate::parse_from_str(&record[0], "%Y-%m-%d").unwrap();
-            let open: f64 = record[1].parse().unwrap();
-            let high: f64 = record[2].parse().unwrap();
-            let low: f64 = record[3].parse().unwrap();
-            let close: f64 = record[4].parse().unwrap();
-            if let Some(last_close) = opt_last_close {
-                let ohlc = OHLC {
-                    open,
-                    high,
-                    low,
-                    close,
-                    last_close,
-                };
-                ohlc_data.push((day, ohlc));
-            }
-            opt_last_close = Some(close);
-            //println!("{:?} {} {} {} {}", day, open, high, low, close);
+    let mut ohlc_x_data = vec![];
+    for (day,e) in ohlc_data.into_iter() {
+        if let Some(last_close) = opt_last_close {
+            let o_x = OHLCX {
+                ohlc: e.clone(),
+                last_close,
+            };
+            ohlc_x_data.push((day, o_x));
         }
-        else {
-            warn!("Parse error: {:?}",result);
-        }
+        opt_last_close = Some(e.close);
     }
-    Ok(ohlc_data)
+    Ok(ohlc_x_data)
 }
 
 fn main() -> Result<(), std::io::Error> {
