@@ -1,14 +1,14 @@
 use coffee::graphics::{
-    Color, Frame, HorizontalAlignment, Mesh, Point, Rectangle, Shape, Window,
-    WindowSettings, Canvas, Image,
+    Canvas, Color, Frame, HorizontalAlignment, Image, Mesh, Point, Rectangle, Shape, Window,
+    WindowSettings,
 };
+use coffee::input::keyboard::KeyCode;
 use coffee::load::Task;
 use coffee::ui::{
-    button, slider, Align, Button, Checkbox, Column, Element, Justify, Radio,
-    Renderer, Row, Slider, Text, UserInterface,
+    button, slider, Align, Button, Checkbox, Column, Element, Justify, Radio, Renderer, Row,
+    Slider, Text, UserInterface,
 };
 use coffee::{Game, Result, Timer};
-use coffee::input::keyboard::KeyCode;
 
 fn main() -> Result<()> {
     <Tour as UserInterface>::run(WindowSettings {
@@ -28,7 +28,7 @@ struct Tour {
     polyline_points: Vec<Point>,
     buf: image::DynamicImage,
 }
-      
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ModeOption {
     Fill,
@@ -57,7 +57,7 @@ impl Game for Tour {
             mode: ModeOption::Fill,
             color: Color::WHITE,
             polyline_points: Vec::new(),
-            buf: image::DynamicImage::new_rgb8(100,100),
+            buf: image::DynamicImage::new_rgb8(100, 100),
         })
     }
 
@@ -106,8 +106,8 @@ impl Game for Tour {
 
         let image = Image::from_image(frame.gpu(), self.buf.clone()).unwrap();
         let quad = coffee::graphics::Quad {
-            position : Point::new(10.0,10.0),
-            size: (200.0,200.0),
+            position: Point::new(10.0, 10.0),
+            size: (200.0, 200.0),
             source: Rectangle {
                 x: 0.0,
                 y: 0.0,
@@ -161,9 +161,8 @@ impl UserInterface for Tour {
         controls = controls.push(Column::new());
 
         if steps.can_continue() {
-            controls = controls.push(
-                Button::new(next_button, "Next").on_press(Message::NextPressed),
-            );
+            controls =
+                controls.push(Button::new(next_button, "Next").on_press(Message::NextPressed));
         }
 
         let content = Column::new()
@@ -253,8 +252,7 @@ impl Steps {
     }
 
     fn can_continue(&self) -> bool {
-        self.current + 1 < self.steps.len()
-            && self.steps[self.current].can_continue()
+        self.current + 1 < self.steps.len() && self.steps[self.current].can_continue()
     }
 }
 
@@ -319,7 +317,13 @@ impl<'a> Step {
                     let canvas = buf.as_mut_rgb8().unwrap();
                     for x in 0..canvas.width() {
                         for y in 0..canvas.height() {
-                            canvas.put_pixel(x,y,image::Rgb{ data: [x as u8,y as u8,*value as u8]});
+                            canvas.put_pixel(
+                                x,
+                                y,
+                                image::Rgb {
+                                    data: [x as u8, y as u8, *value as u8],
+                                },
+                            );
                         }
                     }
                 }
@@ -381,9 +385,7 @@ impl<'a> Step {
                 layout,
                 spacing_slider,
                 spacing,
-            } => {
-                Self::rows_and_columns(*layout, spacing_slider, *spacing).into()
-            }
+            } => Self::rows_and_columns(*layout, spacing_slider, *spacing).into(),
             Step::End => Self::end().into(),
         }
     }
@@ -419,14 +421,8 @@ impl<'a> Step {
                  primary, secondary, and positive.",
             ))
             .push(Button::new(primary, "Primary"))
-            .push(
-                Button::new(secondary, "Secondary")
-                    .class(button::Class::Secondary),
-            )
-            .push(
-                Button::new(positive, "Positive")
-                    .class(button::Class::Positive),
-            )
+            .push(Button::new(secondary, "Secondary").class(button::Class::Secondary))
+            .push(Button::new(positive, "Positive").class(button::Class::Positive))
             .push(Text::new(
                 "Additional types will be added in the near future! Choose \
                  each type smartly depending on the situation.",
@@ -474,10 +470,7 @@ impl<'a> Step {
             .push(question)
     }
 
-    fn slider(
-        state: &'a mut slider::State,
-        value: u16,
-    ) -> Column<'a, StepMessage> {
+    fn slider(state: &'a mut slider::State, value: u16) -> Column<'a, StepMessage> {
         Self::container("Slider")
             .push(Text::new(
                 "A slider allows you to smoothly select a value from a range \
@@ -493,10 +486,7 @@ impl<'a> Step {
                 value as f32,
                 StepMessage::SliderChanged,
             ))
-            .push(
-                Text::new(&value.to_string())
-                    .horizontal_alignment(HorizontalAlignment::Center),
-            )
+            .push(Text::new(&value.to_string()).horizontal_alignment(HorizontalAlignment::Center))
     }
 
     fn text(
@@ -509,9 +499,7 @@ impl<'a> Step {
             .padding(20)
             .spacing(20)
             .push(Text::new("You can change its size:"))
-            .push(
-                Text::new(&format!("This text is {} points", size)).size(size),
-            )
+            .push(Text::new(&format!("This text is {} points", size)).size(size))
             .push(Slider::new(
                 size_slider,
                 10.0..=50.0,
@@ -553,12 +541,7 @@ impl<'a> Step {
         spacing_slider: &'a mut slider::State,
         spacing: u16,
     ) -> Column<'a, StepMessage> {
-        let row_radio = Radio::new(
-            Layout::Row,
-            "Row",
-            Some(layout),
-            StepMessage::LayoutChanged,
-        );
+        let row_radio = Radio::new(Layout::Row, "Row", Some(layout), StepMessage::LayoutChanged);
 
         let column_radio = Radio::new(
             Layout::Column,
