@@ -7,6 +7,8 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+rusticsom = { git = "https://github.com/avinashshenoy97/RusticSOM.git", version = "1.1.0" }
+#rusticsom = { git = "https://github.com/gin66/RusticSOM.git", branch = "master" }
 log = "0.4"
 simple_logger = "1.0"
 chrono = "0.4"
@@ -14,5 +16,6 @@ error-chain = "0.12"
 reqwest = "0.9"
 scraper = "0.10"
 csv = "1.1"
+ndarray = "0.11"
+dirs = "2.0"
 svg = "0.6"
-conrod = { version ="0.61", features = ["winit", "glium"]}
