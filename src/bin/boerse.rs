@@ -10,8 +10,8 @@ use ndarray::s;
 use ndarray::Array2;
 use plotters::prelude::*;
 
-use updater::ohlc::OHLC;
 use updater::error_def::*;
+use updater::ohlc::OHLC;
 
 struct OHLCX {
     ohlc: OHLC,
@@ -82,8 +82,7 @@ fn main() -> Result<()> {
         .collect::<Vec<_>>();
     {
         //let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
-        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000)?
-            .into_drawing_area(); // 1000*1ms
+        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000)?.into_drawing_area(); // 1000*1ms
         let mut remain = dx.clone();
         while remain.len() > 100 {
             let mut part = remain;
