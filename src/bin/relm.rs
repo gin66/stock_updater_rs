@@ -30,6 +30,8 @@ use gtk::{
     //OrientableExt,
     ContainerExt,
     LabelExt,
+    ListBoxExt,
+    //ListBoxRowExt,
     WidgetExt,
     WidgetExtManual,
     Window,
@@ -99,6 +101,7 @@ pub enum Msg {
     MoveCursor((f64, f64)),
     Quit,
     UpdateDrawBuffer,
+    SelectIsin(String),
 }
 
 impl Update for Win {
@@ -146,6 +149,9 @@ impl Update for Win {
                     SIZE);
                 context.fill();
             },
+            SelectIsin(isin) => {
+                println!("{}",isin);
+            }
         }
     }
 
@@ -231,6 +237,13 @@ impl Widget for Win {
                 }
             }
         }
+        let stream = relm.stream().clone();
+        isin_list.connect_row_activated(move |_lb,entry| {
+            let isin = entry.get_name().unwrap().to_string();
+            println!("{}",isin);
+            stream.emit(Msg::SelectIsin(isin));
+        });
+
         vbox.add(&isin_list);
 
         window.add(&vbox);
