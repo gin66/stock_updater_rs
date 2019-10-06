@@ -4,14 +4,14 @@ use chrono::NaiveDate;
 use coffee::graphics::{
     self, Frame, HorizontalAlignment, VerticalAlignment, Window, WindowSettings,
 };
-use coffee::load::Task;
+use coffee::load::loading_screen::ProgressBar;
 use coffee::load::Join;
+use coffee::load::Task;
 use coffee::ui::{
-    button, Align, Button, Column, Element, Image, Justify, Renderer, Row, Text, UserInterface,
-    Radio,
+    button, Align, Button, Column, Element, Image, Justify, Radio, Renderer, Row, Text,
+    UserInterface,
 };
 use coffee::{Game, Result, Timer};
-use coffee::load::loading_screen::ProgressBar;
 use plotters::prelude::*;
 use plotters::style::Color;
 
@@ -36,7 +36,7 @@ struct BoerseApplication {
     opt_image: Option<graphics::Image>,
     load_button: button::State,
 
-    data: Vec<(String,Vec<(NaiveDate, OHLC)>)>,
+    data: Vec<(String, Vec<(NaiveDate, OHLC)>)>,
     selected_isin_id: Option<usize>,
 }
 
@@ -61,25 +61,24 @@ impl Game for BoerseApplication {
                         p.push("ohlc.csv");
                         let f = File::open(p).unwrap();
                         let ohlc_data = OHLC::load_file(f).unwrap();
-                        data.push((isin,ohlc_data));
+                        data.push((isin, ohlc_data));
                     }
                 }
             }
 
             Ok(data)
         });
-        let t2 = Task::succeed(||{});
+        let t2 = Task::succeed(|| {});
 
-        let loader = Task::stage("Load data...",loader);
-        let t2 = Task::stage("dummy",t2);
+        let loader = Task::stage("Load data...", loader);
+        let t2 = Task::stage("dummy", t2);
 
-        (loader,t2).join()
-                .map(|(data,r2)| BoerseApplication {
-                    opt_image: None,
-                    load_button: button::State::new(),
-                    data,
-                    selected_isin_id: None,
-                })
+        (loader, t2).join().map(|(data, r2)| BoerseApplication {
+            opt_image: None,
+            load_button: button::State::new(),
+            data,
+            selected_isin_id: None,
+        })
         //graphics::Image::load("resources/ui.png").map(|image| BoerseApplication { image })
     }
 
@@ -112,7 +111,8 @@ impl UserInterface for BoerseApplication {
                         .y_label_area_size(40)
                         .margin(5)
                         .caption("Histogram Test", ("Arial", 50.0).into_font())
-                        .build_ranged(0u32..10u32, 0u32..10u32).unwrap();
+                        .build_ranged(0u32..10u32, 0u32..10u32)
+                        .unwrap();
 
                     chart
                         .configure_mesh()
@@ -122,17 +122,20 @@ impl UserInterface for BoerseApplication {
                         .y_desc("Count")
                         .x_desc("Bucket")
                         .axis_desc_style(("Arial", 15).into_font())
-                        .draw().unwrap();
+                        .draw()
+                        .unwrap();
 
                     let data = [
                         0u32, 1, 1, 1, 4, 2, 5, 7, 8, 6, 4, 2, 1, 8, 3, 3, 3, 4, 4, 3, 3, 3,
                     ];
 
-                    chart.draw_series(
-                        Histogram::vertical(&chart)
-                            .style(plotters::style::colors::RED.mix(0.5).filled())
-                            .data(data.iter().map(|x: &u32| (*x, 1))),
-                    ).unwrap();
+                    chart
+                        .draw_series(
+                            Histogram::vertical(&chart)
+                                .style(plotters::style::colors::RED.mix(0.5).filled())
+                                .data(data.iter().map(|x: &u32| (*x, 1))),
+                        )
+                        .unwrap();
                 }
                 let im_buffer =
                     image::ImageBuffer::<image::Rgb<u8>, Vec<u8>>::from_raw(w, h, buffer).unwrap();
@@ -156,13 +159,10 @@ impl UserInterface for BoerseApplication {
         } = self;
 
         let mut isins = Column::new();
-        for (i,(isin,_)) in data.iter().enumerate()  {
-            isins = isins.push(Radio::new(
-                        i,
-                        isin,
-                        *selected_isin_id,
-                        |x| Message::IsinSelected(x)
-                    ));
+        for (i, (isin, _)) in data.iter().enumerate() {
+            isins = isins.push(Radio::new(i, isin, *selected_isin_id, |x| {
+                Message::IsinSelected(x)
+            }));
         }
 
         let mut controls = Row::new();
