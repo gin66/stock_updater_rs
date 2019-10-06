@@ -29,13 +29,14 @@ use gtk::{
     Inhibit,
     //OrientableExt,
     ContainerExt,
+    LabelExt,
     WidgetExt,
     WidgetExtManual,
     Window,
     WindowType,
     GtkWindowExt,
 };
-//use gtk::Orientation::Horizontal;
+use gtk::Orientation::Horizontal;
 use rand::Rng;
 use relm_derive::Msg;
 use relm::{
@@ -61,11 +62,10 @@ struct Circle {
 
 impl Circle {
     fn generate() -> Self {
-        println!("generate");
         let mut gen = rand::thread_rng();
         Circle {
-            x: gen.gen_range(20.0, 500.0),
-            y: gen.gen_range(20.0, 500.0),
+            x: gen.gen_range(20.0, 100.0),
+            y: gen.gen_range(20.0, 100.0),
             color: RGBA {
                 red: gen.gen_range(0.0, 1.0),
                 green: gen.gen_range(0.0, 1.0),
@@ -88,6 +88,7 @@ struct Win {
     model: Model,
     window: Window,
     drawing_area: gtk::DrawingArea,
+    isin_list: gtk::ListBox,
 }
 
 
@@ -132,7 +133,6 @@ impl Update for Win {
             MoveCursor(pos) => self.model.cursor_pos = pos,
             Quit => gtk::main_quit(),
             UpdateDrawBuffer => {
-                println!("draw");
                 let context = self.model.draw_handler.get_context();
                 context.set_source_rgb(1.0, 1.0, 1.0);
                 context.paint();
@@ -195,12 +195,45 @@ impl Widget for Win {
         let window = Window::new(WindowType::Toplevel);
         window.set_default_size(320, 200);
         window.set_title("Basic example");
+        let vbox = gtk::Box::new(Horizontal, 0);
 
         let drawing_area= gtk::DrawingAreaBuilder::new()
+                    .width_request(400)
+                    .height_request(400)
+                    .build();
+        vbox.add(&drawing_area);
+
+        let isin_list = gtk::ListBoxBuilder::new()
                     .width_request(100)
                     .height_request(100)
                     .build();
-        window.add(&drawing_area);
+
+        let home_path = dirs::home_dir().unwrap();
+        let mut path = home_path.clone();
+        path.push("data");
+        path.push("stock");
+        //let mut data = vec![];
+        for entry in path.read_dir().expect("read_dir call failed") {
+            if let Ok(entry) = entry {
+                let isin = entry.file_name().into_string().unwrap();
+                if entry.metadata().unwrap().is_dir() && isin.len() == 12 {
+                    //let isin_label = gtk::LabelBuilder::new()
+                    //            .label(&isin)
+                    //            .build();
+                    let isin_label = gtk::Label::new(None);
+                    isin_label.set_markup(&format!("<small>{}</small>",isin));
+                    let isin_label = isin_label.upcast::<gtk::Widget>();
+                    let isin_entry = gtk::ListBoxRowBuilder::new()
+                                .name(&isin)
+                                .child(&isin_label)
+                                .build();
+                    isin_list.add(&isin_entry);
+                }
+            }
+        }
+        vbox.add(&isin_list);
+
+        window.add(&vbox);
 
         // Connect the signal `delete_event` to send the `Quit` message.
         connect!(relm, window, connect_delete_event(_, _), return (Some(Msg::Quit), Inhibit(false)));
@@ -213,6 +246,7 @@ impl Widget for Win {
             model,
             window: window,
             drawing_area,
+            isin_list,
         }
     }
 
