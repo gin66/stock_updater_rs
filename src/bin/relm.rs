@@ -20,17 +20,22 @@
  */
 
 use std::f64::consts::PI;
+//use std::path::PathBuf;
 
 use gdk::{EventMask, RGBA};
 use gtk::{
-    BoxExt,
+    //BoxExt,
     DrawingArea,
     Inhibit,
-    OrientableExt,
+    //OrientableExt,
+    ContainerExt,
     WidgetExt,
     WidgetExtManual,
+    Window,
+    WindowType,
+    GtkWindowExt,
 };
-use gtk::Orientation::Vertical;
+//use gtk::Orientation::Horizontal;
 use rand::Rng;
 use relm_derive::Msg;
 use relm::{
@@ -40,7 +45,7 @@ use relm::{
     interval,
 };
 use relm::*;
-use relm_derive::widget;
+//use relm_derive::widget;
 
 use self::Msg::*;
 
@@ -56,6 +61,7 @@ struct Circle {
 
 impl Circle {
     fn generate() -> Self {
+        println!("generate");
         let mut gen = rand::thread_rng();
         Circle {
             x: gen.gen_range(20.0, 500.0),
@@ -78,6 +84,13 @@ pub struct Model {
     cursor_pos: (f64, f64),
 }
 
+struct Win {
+    model: Model,
+    window: Window,
+    drawing_area: gtk::DrawingArea,
+}
+
+
 #[derive(Msg)]
 pub enum Msg {
     Generate,
@@ -87,25 +100,10 @@ pub enum Msg {
     UpdateDrawBuffer,
 }
 
-#[widget]
-impl Widget for Win {
-    fn init_view(&mut self) {
-        self.model.draw_handler.init(&self.drawing_area);
-        self.drawing_area.add_events(EventMask::POINTER_MOTION_MASK);
-    }
-
-    fn model() -> Model {
-        Model {
-            draw_handler: DrawHandler::new().expect("draw handler"),
-            circles: vec![Circle::generate()],
-            cursor_pos: (-1000.0, -1000.0),
-        }
-    }
-
-    fn subscriptions(&mut self, relm: &Relm<Self>) {
-        interval(relm.stream(), 1000, || Generate);
-        interval(relm.stream(), 16, || Move);
-    }
+impl Update for Win {
+    type Model = Model;
+    type ModelParam = ();
+    type Msg = Msg;
 
     fn update(&mut self, event: Msg) {
         match event {
@@ -134,6 +132,7 @@ impl Widget for Win {
             MoveCursor(pos) => self.model.cursor_pos = pos,
             Quit => gtk::main_quit(),
             UpdateDrawBuffer => {
+                println!("draw");
                 let context = self.model.draw_handler.get_context();
                 context.set_source_rgb(1.0, 1.0, 1.0);
                 context.paint();
@@ -150,22 +149,73 @@ impl Widget for Win {
         }
     }
 
-    view! {
-        gtk::Window {
-            gtk::Box {
-                orientation: Vertical,
-                #[name="drawing_area"]
-                gtk::DrawingArea {
-                    child: {
-                        expand: true,
-                    },
-                    draw(_, _) => (UpdateDrawBuffer, Inhibit(false)),
-                    motion_notify_event(_, event) => (MoveCursor(event.get_position()), Inhibit(false))
-                },
-            },
-            delete_event(_, _) => (Quit, Inhibit(false)),
+    fn model(_: &Relm<Self>, _: ()) -> Model {
+        Model {
+            draw_handler: DrawHandler::new().expect("draw handler"),
+            circles: vec![Circle::generate()],
+            cursor_pos: (-1000.0, -1000.0),
         }
     }
+
+    fn subscriptions(&mut self, relm: &Relm<Self>) {
+        interval(relm.stream(), 1000, || Generate);
+        interval(relm.stream(), 40, || Move);
+        interval(relm.stream(), 20, || UpdateDrawBuffer);
+    }
+}
+
+impl Widget for Win {
+    type Root = Window;
+
+    fn root(&self) -> Self::Root {
+        self.window.clone()
+    }
+
+    fn init_view(&mut self) {
+        self.model.draw_handler.init(&self.drawing_area);
+        self.drawing_area.add_events(EventMask::POINTER_MOTION_MASK);
+    }
+
+    //        gtk::Box {
+    //            orientation: Horizontal,
+    //            #[name="drawing_area"]
+    //            gtk::DrawingArea {
+    //                child: {
+    //                    expand: true,
+    //                },
+    //                draw(_, _) => (UpdateDrawBuffer, Inhibit(false)),
+    //                motion_notify_event(_, event) => (MoveCursor(event.get_position()), Inhibit(false))
+    //            },
+    //            gtk::ListBox {
+    //            }
+
+    // Create the widgets.
+    fn view(relm: &Relm<Self>, model: Self::Model) -> Self {
+        // GTK+ widgets are used normally within a `Widget`.
+        let window = Window::new(WindowType::Toplevel);
+        window.set_default_size(320, 200);
+        window.set_title("Basic example");
+
+        let drawing_area= gtk::DrawingAreaBuilder::new()
+                    .width_request(100)
+                    .height_request(100)
+                    .build();
+        window.add(&drawing_area);
+
+        // Connect the signal `delete_event` to send the `Quit` message.
+        connect!(relm, window, connect_delete_event(_, _), return (Some(Msg::Quit), Inhibit(false)));
+        // There is also a `connect!()` macro for GTK+ events that do not need a
+        // value to be returned in the callback.
+
+        window.show_all();
+
+        Win {
+            model,
+            window: window,
+            drawing_area,
+        }
+    }
+
 }
 
 fn main() {
