@@ -1,8 +1,7 @@
-use std::f64::consts::PI;
 use std::fs::File;
 //use std::path::PathBuf;
 
-use gdk::{EventMask, RGBA};
+use gdk::EventMask;
 use gtk::Orientation::Horizontal;
 use gtk::{
     //OrientableExt,
@@ -19,53 +18,20 @@ use gtk::{
     Window,
     WindowType,
 };
-use rand::Rng;
 use relm::*;
 use relm::{interval, DrawHandler, Relm, Widget};
 use relm_derive::Msg;
 //use relm_derive::widget;
 use chrono::offset::{Local, TimeZone};
 use chrono::Date;
-use chrono::{Datelike, NaiveDate};
-use ndarray::s;
-use ndarray::Array2;
 use plotters::prelude::*;
 
 use updater::ohlc::OHLC;
 
 use self::Msg::*;
 
-const SIZE: f64 = 15.0;
-
-struct Circle {
-    x: f64,
-    y: f64,
-    color: RGBA,
-    vx: f64,
-    vy: f64,
-}
-
-impl Circle {
-    fn generate() -> Self {
-        let mut gen = rand::thread_rng();
-        Circle {
-            x: gen.gen_range(20.0, 100.0),
-            y: gen.gen_range(20.0, 100.0),
-            color: RGBA {
-                red: gen.gen_range(0.0, 1.0),
-                green: gen.gen_range(0.0, 1.0),
-                blue: gen.gen_range(0.0, 1.0),
-                alpha: 1.0,
-            },
-            vx: gen.gen_range(1.0, 5.0),
-            vy: gen.gen_range(1.0, 5.0),
-        }
-    }
-}
-
 pub struct Model {
     draw_handler: DrawHandler<DrawingArea>,
-    circles: Vec<Circle>,
     cursor_pos: (f64, f64),
 }
 
@@ -92,26 +58,8 @@ impl Update for Win {
 
     fn update(&mut self, event: Msg) {
         match event {
-            Generate => self.model.circles.push(Circle::generate()),
-            Move => {
-                let allocation = self.drawing_area.get_allocation();
-                for circle in &mut self.model.circles {
-                    if (circle.x + circle.vx + SIZE / 2.0 < allocation.width as f64)
-                        && (circle.x + circle.vx - SIZE / 2.0 > 0.0)
-                    {
-                        circle.x += circle.vx;
-                    } else {
-                        circle.vx *= -1.0;
-                    }
-                    if (circle.y + circle.vy + SIZE / 2.0 < allocation.height as f64)
-                        && (circle.y + circle.vy - SIZE / 2.0 > 0.0)
-                    {
-                        circle.y += circle.vy;
-                    } else {
-                        circle.vy *= -1.0;
-                    }
-                }
-            }
+            Generate => {},
+            Move => { }
             MoveCursor(pos) => self.model.cursor_pos = pos,
             Quit => gtk::main_quit(),
             SelectIsin(isin) => {
@@ -169,7 +117,6 @@ impl Update for Win {
     fn model(_: &Relm<Self>, _: ()) -> Model {
         Model {
             draw_handler: DrawHandler::new().expect("draw handler"),
-            circles: vec![Circle::generate()],
             cursor_pos: (-1000.0, -1000.0),
         }
     }
