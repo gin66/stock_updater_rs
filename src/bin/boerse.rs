@@ -68,7 +68,6 @@ fn main() -> Result<()> {
     simple_logger::init().unwrap();
 
     let home_path = dirs::home_dir().unwrap();
-
     let mut fname = home_path.clone();
     fname.push("data");
     fname.push("stock");
@@ -82,7 +81,7 @@ fn main() -> Result<()> {
         .collect::<Vec<_>>();
     {
         //let root = BitMapBackend::new("dax.png", (1024, 768)).into_drawing_area();
-        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000)?.into_drawing_area(); // 1000*1ms
+        let root = BitMapBackend::gif("dax.gif", (1024, 768), 1000).unwrap().into_drawing_area(); // 1000*1ms
         let mut remain = dx.clone();
         while remain.len() > 100 {
             let mut part = remain;

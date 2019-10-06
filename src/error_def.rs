@@ -6,7 +6,7 @@ error_chain! {
         ParseDate(chrono::format::ParseError);
         Io(std::io::Error);
         Reqwest(reqwest::Error);
-        ImageErr(image::ImageError);
+        //ImageErr(image::ImageError);
     }
 
     errors { RandomResponseError(t: String) }

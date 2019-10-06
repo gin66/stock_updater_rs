@@ -1,25 +1,5 @@
-/*
- * Copyright (c) 2018 Boucher, Antoni <bouanto@zoho.com>
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 use std::f64::consts::PI;
+use std::fs::File;
 //use std::path::PathBuf;
 
 use gdk::{EventMask, RGBA};
@@ -49,6 +29,14 @@ use relm::{
 };
 use relm::*;
 //use relm_derive::widget;
+use chrono::offset::{Local, TimeZone};
+use chrono::Date;
+use chrono::{Datelike, NaiveDate};
+use ndarray::s;
+use ndarray::Array2;
+use plotters::prelude::*;
+
+use updater::ohlc::OHLC;
 
 use self::Msg::*;
 
@@ -90,7 +78,7 @@ struct Win {
     model: Model,
     window: Window,
     drawing_area: gtk::DrawingArea,
-    isin_list: gtk::ListBox,
+    //isin_list: gtk::ListBox,
 }
 
 
@@ -100,7 +88,6 @@ pub enum Msg {
     Move,
     MoveCursor((f64, f64)),
     Quit,
-    UpdateDrawBuffer,
     SelectIsin(String),
 }
 
@@ -135,22 +122,58 @@ impl Update for Win {
             },
             MoveCursor(pos) => self.model.cursor_pos = pos,
             Quit => gtk::main_quit(),
-            UpdateDrawBuffer => {
-                let context = self.model.draw_handler.get_context();
-                context.set_source_rgb(1.0, 1.0, 1.0);
-                context.paint();
-                for circle in &self.model.circles {
-                    context.set_source_rgb(circle.color.red, circle.color.green, circle.color.blue);
-                    context.arc(circle.x, circle.y, SIZE, 0.0, 2.0 * PI);
-                    context.fill();
-                }
-                context.set_source_rgb(0.1, 0.2, 0.3);
-                context.rectangle(self.model.cursor_pos.0 - SIZE / 2.0, self.model.cursor_pos.1 - SIZE / 2.0, SIZE,
-                    SIZE);
-                context.fill();
-            },
             SelectIsin(isin) => {
                 println!("{}",isin);
+    let home_path = dirs::home_dir().unwrap();
+    let mut fname = home_path.clone();
+    fname.push("data");
+    fname.push("stock");
+    fname.push(isin);
+    fname.push("ohlc.csv");
+    let f = File::open(fname).unwrap();
+    let part = OHLC::load_file(f).unwrap();
+    let part = part
+        .iter()
+        .map(|(d, e)| (chrono::Local.from_utc_date(&d) as Date<Local>, e))
+        .collect::<Vec<_>>();
+
+                let context = self.model.draw_handler.get_context();
+                let root = CairoBackend::new(&context, (1024, 768)).unwrap().into_drawing_area(); // 1000*1ms
+                root.fill(&WHITE).unwrap();
+                let from_date = part.first().unwrap().0;
+                let to_date = part.last().unwrap().0;
+                let from_y = part.iter().map(|e| e.1.low).fold(1. / 0., f32::min);
+                let to_y = part.iter().map(|e| e.1.high).fold(0. / 0., f32::max);
+                println!("{}", from_date);
+                let mut chart = ChartBuilder::on(&root)
+                    .x_label_area_size(60)
+                    .y_label_area_size(60)
+                    .caption("DAX", ("Arial", 50.0).into_font())
+                    .build_ranged(from_date..to_date, from_y..to_y)
+                    .unwrap();
+
+                chart
+                    .configure_mesh()
+                    .line_style_2(&WHITE)
+                    .x_label_formatter(&|d| d.format("%Y-%m-%d").to_string())
+                    .draw()
+                    .unwrap();
+
+                chart
+                    .draw_series(part.into_iter().map(|(d, x)| {
+                        CandleStick::new(
+                            d,
+                            x.open,
+                            x.high,
+                            x.low,
+                            x.close,
+                            &GREEN,
+                            &RED,
+                            15,
+                        )
+                    }))
+                    .unwrap();
+                root.present().unwrap();
             }
         }
     }
@@ -166,7 +189,6 @@ impl Update for Win {
     fn subscriptions(&mut self, relm: &Relm<Self>) {
         interval(relm.stream(), 1000, || Generate);
         interval(relm.stream(), 40, || Move);
-        interval(relm.stream(), 20, || UpdateDrawBuffer);
     }
 }
 
@@ -259,7 +281,7 @@ impl Widget for Win {
             model,
             window: window,
             drawing_area,
-            isin_list,
+            //isin_list,
         }
     }
 
