@@ -23,3 +23,13 @@ svg = "0.6"
 coffee = { git = "https://github.com/hecrj/coffee", branch = "master", features = ["opengl"] }
 image = "0.21"
 plotters = "0.2"
+
+gdk = "^0.11.0"
+glib = "^0.8.0"
+gtk = "^0.7.0"
+gtk-test = "^0.4"
+gio = "0.7"
+
+relm = "0.17"
+relm-derive = "0.17"
+rand = "^0.5.1"

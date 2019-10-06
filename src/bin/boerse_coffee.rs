@@ -1,13 +1,21 @@
+use std::fs::File;
+
+use chrono::NaiveDate;
 use coffee::graphics::{
     self, Frame, HorizontalAlignment, VerticalAlignment, Window, WindowSettings,
 };
 use coffee::load::Task;
+use coffee::load::Join;
 use coffee::ui::{
     button, Align, Button, Column, Element, Image, Justify, Renderer, Row, Text, UserInterface,
+    Radio,
 };
 use coffee::{Game, Result, Timer};
+use coffee::load::loading_screen::ProgressBar;
 use plotters::prelude::*;
 use plotters::style::Color;
+
+use updater::ohlc::OHLC;
 
 pub fn main() -> Result<()> {
     <BoerseApplication as UserInterface>::run(WindowSettings {
@@ -21,23 +29,58 @@ pub fn main() -> Result<()> {
 #[derive(Debug, Clone, Copy)]
 pub enum Message {
     ButtonClicked,
+    IsinSelected(usize),
 }
 
 struct BoerseApplication {
     opt_image: Option<graphics::Image>,
     load_button: button::State,
+
+    data: Vec<(String,Vec<(NaiveDate, OHLC)>)>,
+    selected_isin_id: Option<usize>,
 }
 
 impl Game for BoerseApplication {
     type Input = ();
-    type LoadingScreen = ();
+    type LoadingScreen = ProgressBar;
 
     fn load(_window: &Window) -> Task<BoerseApplication> {
+        let loader = Task::new(|| {
+            let home_path = dirs::home_dir().unwrap();
+
+            let mut path = home_path.clone();
+            path.push("data");
+            path.push("stock");
+            let mut data = vec![];
+            for entry in path.read_dir().expect("read_dir call failed") {
+                if let Ok(entry) = entry {
+                    let isin = entry.file_name().into_string().unwrap();
+                    if entry.metadata().unwrap().is_dir() && isin.len() == 12 {
+                        println!("{:?}", isin);
+                        let mut p = entry.path();
+                        p.push("ohlc.csv");
+                        let f = File::open(p).unwrap();
+                        let ohlc_data = OHLC::load_file(f).unwrap();
+                        data.push((isin,ohlc_data));
+                    }
+                }
+            }
+
+            Ok(data)
+        });
+        let t2 = Task::succeed(||{});
+
+        let loader = Task::stage("Load data...",loader);
+        let t2 = Task::stage("dummy",t2);
+
+        (loader,t2).join()
+                .map(|(data,r2)| BoerseApplication {
+                    opt_image: None,
+                    load_button: button::State::new(),
+                    data,
+                    selected_isin_id: None,
+                })
         //graphics::Image::load("resources/ui.png").map(|image| BoerseApplication { image })
-        Task::succeed(|| BoerseApplication {
-            opt_image: None,
-            load_button: button::State::new(),
-        })
     }
 
     fn draw(&mut self, frame: &mut Frame, _timer: &Timer) {
@@ -98,6 +141,9 @@ impl UserInterface for BoerseApplication {
                 let image = graphics::Image::from_image(gpu, dyn_image).unwrap();
                 self.opt_image = Some(image);
             }
+            Message::IsinSelected(i) => {
+                self.selected_isin_id = Some(i);
+            }
         }
     }
 
@@ -105,7 +151,19 @@ impl UserInterface for BoerseApplication {
         let BoerseApplication {
             opt_image,
             load_button,
+            data,
+            selected_isin_id,
         } = self;
+
+        let mut isins = Column::new();
+        for (i,(isin,_)) in data.iter().enumerate()  {
+            isins = isins.push(Radio::new(
+                        i,
+                        isin,
+                        *selected_isin_id,
+                        |x| Message::IsinSelected(x)
+                    ));
+        }
 
         let mut controls = Row::new();
         controls = controls.push(Button::new(load_button, "Load").on_press(Message::ButtonClicked));
@@ -113,7 +171,7 @@ impl UserInterface for BoerseApplication {
             controls = controls.push(Image::new(&image).height(250));
         }
         controls = controls.justify_content(Justify::Center);
-        Column::new()
+        Row::new()
             .width(window.width() as u32)
             .height(window.height() as u32)
             .align_items(Align::Center)
@@ -127,6 +185,7 @@ impl UserInterface for BoerseApplication {
                     .vertical_alignment(VerticalAlignment::Center),
             )
             .push(controls)
+            .push(isins)
             .into()
     }
 }
