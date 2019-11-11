@@ -72,7 +72,7 @@ impl Update for Win {
                 fname.push("ohlc.csv");
                 let f = File::open(fname).unwrap();
                 let part = OHLC::load_file(f).unwrap();
-                let part = part
+                let mut part = part
                     .iter()
                     .map(|(d, e)| (chrono::Local.from_utc_date(&d) as Date<Local>, e))
                     .collect::<Vec<_>>();
@@ -82,6 +82,11 @@ impl Update for Win {
                     .unwrap()
                     .into_drawing_area(); // 1000*1ms
                 root.fill(&WHITE).unwrap();
+
+                let day = chrono::NaiveDate::parse_from_str("2019-07-01", "%Y-%m-%d").unwrap();
+                let day = chrono::Local.from_utc_date(&day) as Date<Local>;
+                part.retain(|(d,_)| *d > day);
+
                 let from_date = part.first().unwrap().0;
                 let to_date = part.last().unwrap().0;
                 let from_y = part.iter().map(|e| e.1.low).fold(1. / 0., f32::min);
@@ -106,7 +111,7 @@ impl Update for Win {
 
                 chart
                     .draw_series(part.into_iter().map(|(d, x)| {
-                        CandleStick::new(d, x.open, x.high, x.low, x.close, &GREEN, &RED, 15)
+                        CandleStick::new(d, x.open, x.high, x.low, x.close, &GREEN, &RED, 1)
                     }))
                     .unwrap();
                 root.present().unwrap();
